@@ -16,6 +16,7 @@ var ghStrategy = new GitHubStrategy(ghConfig,
 	function(accessToekn, refreshToken, profile, done) {
 		console.log('Authentication Successful!');
 		console.dir(profile);
+		//Passing all of the data of the profile
 		done(null, profile);
 	});
 
@@ -70,7 +71,15 @@ app.use(function(req, res, next) {
 	next();
 });
 
+//Won't get called if the above function doesn't call next()
 app.use(express.static(__dirname + '/static/secure'));
+
+//Only allow authenticated users
+app.get('/api/v1/users/me', function(req, res) {
+	//Currently authenticated user: req.user
+	//Full JS object that has all of the user's information
+	res.json(req.user);
+});
 
 app.listen(80, function() {
 	console.log('server is listening');
