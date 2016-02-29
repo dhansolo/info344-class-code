@@ -4,6 +4,7 @@ node_modules
 
 # ignore all files in any directory named `secret`
 **/secret/*
+**zip_code_database.csv*
 
 # except files ending in `.template` or `.md`
 !**/secret/*.template
