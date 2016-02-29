@@ -6,13 +6,36 @@ import (
 	"time"
 	"encoding/json"
 	"log"
+	"runtime"
 )
 
-//Structure for json
+//Structure for json. Represents a response from the hello route
 type HelloResponse struct {
 	Name string `json:"name"`
 	Message string `json:"message"`
 	GeneratedAt time.Time `json:"generatedAt"`
+}
+
+//
+var memstats = new(runtime.MemStats)
+
+func getMemStats(w http.ResponseWriter, r *http.Request) {
+	runtime.ReadMemStats(memstats)
+	allocstats := make(map[string]uint64)
+	allocstats["alloc"] = memstats.Alloc
+	allocstats["totalAlloc"] = memstats.TotalAlloc
+	//Will only care about TotalAlloc values
+	j, err := json.Marshal(allocstats)
+	if nil != err {
+		log.Println(err)
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+	} else {
+		//Allows us to add a header to the response. Says that we're sending back json
+		w.Header().Add("Content-Type", "application/json")
+		//Otherwise, write the response
+		w.Write(j)
+	}
 }
 
 func sayHello(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +64,9 @@ func main() {
 	http.Handle("/", http.FileServer(http.Dir("./static")))
 	//HandleFunc expects that the second function is a go argument with lower capabilities
 	//Anything that comes after the last / will still be directed to /api/v1/hello
-	http.HandleFunc("/api/v1/hello/", sayHello);
+	http.HandleFunc("/api/v1/hello/", sayHello)
+	//Requests memory statistics for performance purposes
+	http.HandleFunc("/api/v1/memstats", getMemStats)
 	
 	fmt.Println("Server listening on port 9000...")	
 	//nil is added to say not to go to the next line after so that the webs server does not halt
