@@ -25,6 +25,7 @@ func hashFile(infilePath string, outfilePath string, wg *sync.WaitGroup) {
     if nil != err {
         log.Fatal(err)
     }
+    //garbage collector can't free up file handler, therefore you must actually close them
     defer infile.Close()
 
     //open the outfile
@@ -90,7 +91,18 @@ func main() {
     //the file name
     //use a sync.WaitGroup to block the main 
     //thread until all the goroutines have finished
+    wg := sync.WaitGroup{}
+    for _, file := range files {
+        if !file.IsDir() {
+            //Takes an int and adds that amount to the wait group
+            wg.Add(1)
+            //Starts a new thread of execution with the go keyword
+            go hashFile(dir + file.Name(), hashesDir + file.Name(), &wg)
+        }
+    }
 
+    //Wait for all goroutines to finished. Will block the main thread.
+    wg.Wait()
 
     //get the ending time and report duration
     dur := time.Since(startTime)
